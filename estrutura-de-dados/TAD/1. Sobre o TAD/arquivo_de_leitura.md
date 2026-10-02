@@ -15,11 +15,7 @@ Quem usa o TAD só precisa saber o **o quê**. O **como** fica escondido (encaps
 
 ## Analogia
 
-Pensa num controle remoto de TV: você sabe que o botão "vol +" aumenta o volume. Você **não precisa saber** como o circuito interno faz isso.
-
-Se amanhã trocarem o circuito por um totalmente diferente, mas o botão continuar fazendo a mesma coisa, você nem percebe a diferença.
-
-O TAD é exatamente isso aplicado a estruturas de dados: a "operação" (botão) continua igual, mesmo que a "implementação" (circuito) mude por dentro.
+É com um controle remoto de TV: você sabe que o botão "vol +" aumenta o volume. Você **não precisa saber** como o circuito interno faz isso. Se amanhã trocarem o circuito por um totalmente diferente, mas o botão continuar fazendo a mesma coisa, você nem percebe a diferença. O TAD é exatamente isso aplicado a estruturas de dados: a "operação" (botão) continua igual, mesmo que a "implementação" (circuito) mude por dentro.
 
 ---
 
