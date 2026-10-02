@@ -73,11 +73,11 @@ estrutura-de-dados-lineares/
 | :--- | :--- | :---: |
 | `FILA/` | Implementação de Fila (Queue) circular com vetor estático | ✅ |
 | `PILHA/` | Implementação de Pilha (Stack) com vetor estático | ✅ |
-| `LISTA-ENCADEADA/` | Implementação de Lista Encadeada de inteiros | 🚧 |
+| `LISTA-ENCADEADA/` | Implementação de Lista Encadeada de inteiros | ✅ |
 | `TAD/PONTO/` | Tipo Abstrato de Dados (TAD) - Ponto no plano cartesiano | ✅ |
 | `TAD/QUADRADO/` | Tipo Abstrato de Dados (TAD) - Quadrado, composto por Pontos | ✅ |
-| `TAD/1. Sobre o TAD/` | Anotações e explicações conceituais sobre TADs | 🚧 |
-| `exercicios-resolvidos/` | Exercícios resolvidos de fila, pilha e TAD | 🚧 |
+| `TAD/1. Sobre o TAD/` | Anotações e explicações conceituais sobre TADs | ✅ |
+| `exercicios-resolvidos/` | Exercícios resolvidos de fila, pilha e TAD | ✅ |
 | `revisao.c` | Revisão de conceitos base: stack x heap, ponteiros, passagem por valor/referência | ✅ |
 
 > **Status:** ✅ = Concluído | 🚧 = Em andamento | 📝 = Planejado
