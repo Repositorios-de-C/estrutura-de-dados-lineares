@@ -2,7 +2,6 @@
 #include <stdio.h>
 
 int main() {
-
     int valor;
 
     printf("Valor: ");
@@ -20,6 +19,5 @@ int main() {
     printf("Primeiro elemento: %d\n", acessar_inicio(li));
 
     destruir(li);
-
     return 0;
 }
