@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "lista.h"
+#include "lista_dupl.h"
 struct elem {
     int valor;
     struct elem* prox;
