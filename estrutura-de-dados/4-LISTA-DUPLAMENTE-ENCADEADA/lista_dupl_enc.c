@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "lista.h"
+
 struct elem {
     int valor;
     struct elem* prox;
@@ -80,12 +81,53 @@ int acessar_final(Lista li){
 }
 
 
-int buscar_por_valor(Lista li, int valor){}
+int buscar_por_valor(Lista li, int valor){
+    int posicao = 0;
+    Elem aux= li->inicio;
+    while(aux != NULL){
+        if(aux->valor == valor){
+            return posicao;
+        }
+        aux = aux->prox;
+        posicao++;
+    }
+    return -1;
+}
 
 
-int buscar_por_posicao(Lista li, int posicao){}
+int buscar_por_posicao(Lista li, int posicao){
+    if(posicao < 0 || posicao >= li->qtd){
+        return -1;
+    }
+
+    Elem aux;
+    if(posicao < li->qtd / 2){
+        aux = li->inicio;
+        for(int i=0; i<posicao; i++){
+            aux = aux->prox;
+        }
+    } else {
+        aux = li->fim;
+        for(int i = li->qtd - 1; i > posicao; i--){
+            aux = aux->ant;
+        }
+    }
+    return aux->valor;
+}
 
 
+void destruir(Lista li){
+    if(li == NULL){
+        return;
+    }
 
-
-void destruir(Lista li){}
+    Elem aux = li->inicio;
+    
+    while(aux != NULL){
+        Elem atual = aux;
+        aux = aux->prox;
+        free(atual);
+    }
+    
+    free(li);
+}
