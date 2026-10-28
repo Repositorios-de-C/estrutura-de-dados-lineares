@@ -4,10 +4,8 @@
 int main(){
     Fila f = criar();
 
-    enfileirar(f, 20);
-    enfileirar(f, 40);
-    enfileirar(f, 60);
-    enfileirar(f, 30);
+    enfileirar(f, 20); enfileirar(f, 40);
+    enfileirar(f, 60); enfileirar(f, 30);
 
     printf("\nInicio da fila: %d", acessar_inicio(f));
 
