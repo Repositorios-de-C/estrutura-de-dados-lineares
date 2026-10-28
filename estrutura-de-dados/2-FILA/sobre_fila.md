@@ -64,15 +64,12 @@ Se só tivéssemos `inicio` e `final`, ficaria impossível distinguir **fila vaz
 #include<stdlib.h>
 #include<stdio.h>
 #include "fila.h"
-#define MAX 4
 ```
 
 - `<stdlib.h>`: fornece `malloc` e `free`.
 - `<stdio.h>`: fornece `printf` (usado em `imprimir_fila`).
 - `"fila.h"`: traz as assinaturas das funções e o `typedef struct fila* Fila`.
-- `#define MAX 4`: define a capacidade da fila.
 
-> **Observação:** `MAX` também é definido em `fila.h`. Como os dois valores são idênticos (`4`), o compilador aceita sem reclamar, mas a definição fica **duplicada**. Se um dia você mudar o valor em um arquivo e esquecer do outro, aparecerá um aviso de redefinição de macro (e valeria o valor do último `#define` lido). O mais limpo é manter só uma, em `fila.h`, e remover a do `.c`.
 
 ### Sobre o `typedef struct fila* Fila`
 
@@ -287,6 +284,17 @@ Observe:
 | `imprimir_fila` | O(MAX) | nada |
 | `destruir` | O(1) | nada |
 
+<<<<<<< HEAD
+=======
+## Pontos de melhoria
+
+1. **Remover o `#define MAX 4` duplicado** de um dos dois arquivos.
+2. **`criar(void)`** em vez de `criar()`.
+3. **`imprimir_fila`** mostrando só os `qtd` elementos válidos, na ordem da fila.
+4. **`acessar_inicio` com status + ponteiro**, para eliminar a ambiguidade do `-1`.
+5. Opcional: funções `fila_vazia()` e `fila_cheia()` para quem usa a fila poder testar o estado sem depender do retorno das operações.
+
+>>>>>>> 4a947eeb2e3405dcadcf6670279d77f1f50d4f18
 ## Fila circular (array) × Lista encadeada
 
 | | Fila com array circular | Fila com lista encadeada |
@@ -295,4 +303,8 @@ Observe:
 | Memória | um bloco só | um `malloc` por nó |
 | Enfileirar / desenfileirar | O(1) | O(1) (com ponteiro para o fim) |
 | Pode ficar cheia? | sim | só se faltar memória |
+<<<<<<< HEAD
 | `destruir` | um `free` | laço liberando nó a nó |
+=======
+| `destruir` | um `free` | laço liberando nó a nó |
+>>>>>>> 4a947eeb2e3405dcadcf6670279d77f1f50d4f18
