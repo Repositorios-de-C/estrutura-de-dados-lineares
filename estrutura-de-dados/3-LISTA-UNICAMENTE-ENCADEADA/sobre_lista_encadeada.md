@@ -175,7 +175,6 @@ int remover_final(Lista li) {
 - `free(aux)` libera o último nó, e `ant->prox = NULL` faz o penúltimo nó (agora o novo último) apontar para `NULL`.
 - Complexidade: **O(n)** — precisa percorrer a lista inteira.
 
-> ⚠️ **Ponto de atenção sobre `ant`**: a variável `ant` é declarada (`Elem ant;`) mas **não inicializada**. Isso só não causa problema aqui porque o `if (aux->prox == NULL)` acima já trata o caso de 1 elemento separadamente — ou seja, se o laço `while` executa, é garantido que ele roda **pelo menos uma vez** antes de `aux` chegar ao fim, então `ant` sempre recebe um valor válido antes de ser usado. Ainda assim, é uma boa prática inicializar variáveis ao declará-las, para evitar esse tipo de raciocínio "funciona, mas por pouco".
 
 ### `acessar_final(Lista li)`
 ```c
