@@ -1,7 +1,6 @@
 #include<stdlib.h>
 #include<stdio.h>
 #include "fila.h"
-#define MAX 4
 
 struct fila{
     int dados[MAX]; //dados é um array de int com tamanho MAX, que armazena os [elementos da fila]
@@ -44,7 +43,7 @@ int acessar_inicio(Fila f){
     if(f->qtd > 0){
         return f->dados[f->inicio];
     }
-    return -1;
+    return 0;
 }
 
 

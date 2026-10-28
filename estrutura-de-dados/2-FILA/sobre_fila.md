@@ -1,8 +1,22 @@
-# TAD Fila (Circular)
+# Fila Circular com Array (`fila.c`)
 
 ## Visão geral
 
-O programa implementa uma **Fila (Queue)** com tamanho fixo, seguindo a lógica **FIFO** (First In, First Out — o primeiro que entra é o primeiro que sai). A particularidade aqui é que ela é **circular**: usa aritmética de módulo (`%`) para "dar a volta" no array quando chega ao final, em vez de desperdiçar espaço.
+Este README explica **apenas o arquivo `fila.c`**, que implementa uma **Fila** (estrutura **FIFO**: *First In, First Out*, o primeiro a entrar é o primeiro a sair) de inteiros usando um **array de tamanho fixo** com comportamento **circular**.
+
+Funções implementadas: `criar`, `enfileirar`, `desenfileirar`, `acessar_inicio`, `imprimir_fila` e `destruir`.
+
+### A ideia central
+
+- Os elementos entram pelo **final** da fila e saem pelo **início**.
+- Os dados ficam num array de `MAX` posições (aqui, `MAX = 4`). A fila **não cresce**: se encher, `enfileirar` falha.
+- Para não desperdiçar posições conforme os elementos saem, o array é tratado como um **círculo**: depois da última posição (`MAX - 1`), o índice volta para `0`. Isso é feito com o operador módulo (`%`).
+
+```
+Índices do array:   [0] [1] [2] [3]
+                     ↑               o índice depois do [3] volta para o [0]
+                     └───────────────┘
+```
 
 ---
 
@@ -15,25 +29,61 @@ struct fila{
     int final;
     int qtd;
 };
-typedef struct fila* Fila;
 ```
 
 | Campo | Tipo | Significado |
 |---|---|---|
-| `dados` | `int[MAX]` | Array fixo (`MAX = 4`) que guarda os elementos da fila |
+| `dados` | `int[MAX]` | O array que guarda os elementos da fila |
 | `inicio` | `int` | Índice do **primeiro** elemento da fila (o próximo a sair) |
 | `final` | `int` | Índice da **próxima posição livre** (onde o próximo elemento vai entrar) |
-| `qtd` | `int` | Quantidade atual de elementos na fila |
+| `qtd` | `int` | Quantidade de elementos atualmente na fila |
 
-### Por que 3 variáveis de controle (a pilha só precisava de uma)?
+> ⚠️ **Atenção ao nome `final`:** ele **não** aponta para o último elemento, e sim para a posição **logo depois** do último, ou seja, o lugar onde o próximo `enfileirar` vai escrever.
 
-Na pilha, só se mexe numa ponta (o topo). Na fila, mexe-se em **duas pontas diferentes**: insere no final e remove do início. Isso já exige `inicio` e `final`. O `qtd` entra como variável extra para resolver uma ambiguidade clássica das filas circulares: quando `inicio == final`, isso pode significar tanto "fila vazia" quanto "fila cheia" — dependendo de como os índices andaram. Guardar `qtd` separadamente resolve essa ambiguidade de forma simples e direta.
+### Por que existe o campo `qtd`?
+
+Se só tivéssemos `inicio` e `final`, ficaria impossível distinguir **fila vazia** de **fila cheia**, porque nos dois casos `inicio == final`. O `qtd` resolve a ambiguidade:
+
+| Situação | `inicio == final`? | `qtd` |
+|---|---|---|
+| Fila vazia | sim | `0` |
+| Fila cheia | sim | `MAX` |
+
+### Relações que sempre devem valer (invariantes)
+
+1. `0 <= qtd <= MAX`.
+2. `inicio` e `final` estão sempre entre `0` e `MAX - 1`.
+3. Os elementos da fila ocupam as posições `inicio`, `inicio+1`, ... (voltando a 0 ao passar de `MAX-1`), num total de `qtd` posições.
+4. `final == (inicio + qtd) % MAX`.
+
+---
+
+## Includes e `#define`
+
+```c
+#include<stdlib.h>
+#include<stdio.h>
+#include "fila.h"
+#define MAX 4
+```
+
+- `<stdlib.h>`: fornece `malloc` e `free`.
+- `<stdio.h>`: fornece `printf` (usado em `imprimir_fila`).
+- `"fila.h"`: traz as assinaturas das funções e o `typedef struct fila* Fila`.
+- `#define MAX 4`: define a capacidade da fila.
+
+> **Observação:** `MAX` também é definido em `fila.h`. Como os dois valores são idênticos (`4`), o compilador aceita sem reclamar, mas a definição fica **duplicada**. Se um dia você mudar o valor em um arquivo e esquecer do outro, aparecerá um aviso de redefinição de macro (e valeria o valor do último `#define` lido). O mais limpo é manter só uma, em `fila.h`, e remover a do `.c`.
+
+### Sobre o `typedef struct fila* Fila`
+
+O tipo `Fila` é um **ponteiro** para `struct fila`. Como a `struct` é **definida só no `.c`**, quem usa a fila (como o `main`) não consegue acessar `f->dados` ou `f->inicio` diretamente. Só pode usar as funções. Isso é o **encapsulamento** (TAD opaco).
 
 ---
 
 ## Função por função
 
 ### `criar()`
+
 ```c
 Fila criar(){
     Fila f = malloc(sizeof(struct fila));
@@ -45,10 +95,25 @@ Fila criar(){
     return f;
 }
 ```
-- Aloca a struct no heap.
-- Inicializa `inicio = 0`, `final = 0` e `qtd = 0` → fila vazia, ambos os índices apontando para a posição 0.
 
-### `enfileirar(Fila f, int valor)` — insere no final
+**O que faz:** cria uma fila vazia.
+
+**Lógica:**
+- `malloc(sizeof(struct fila))` aloca no heap **uma única struct** que já contém o array `dados` dentro dela (por isso um bloco só basta).
+- `if(f != NULL)`: `malloc` devolve `NULL` se faltar memória. Sem o teste, escrever em `f->inicio` derrubaria o programa.
+- `inicio = 0`, `final = 0` e `qtd = 0` representam a fila vazia: o primeiro elemento a entrar vai para a posição `0`.
+- Retorna `f`, que pode ser `NULL` em caso de falha, então **quem chama deve conferir**.
+
+**Detalhe:** o `malloc` **não zera** a memória, então as posições de `dados` começam com lixo. Não é problema para o funcionamento da fila (só lemos posições que já foram escritas), mas afeta `imprimir_fila` (veja abaixo).
+
+**Sugestão:** declarar como `Fila criar(void)`. Em C, parênteses vazios significam "argumentos não especificados", enquanto `void` diz explicitamente "nenhum argumento".
+
+**Complexidade:** O(1).
+
+---
+
+### `enfileirar()`
+
 ```c
 int enfileirar(Fila f, int valor){
     if(f->qtd < MAX){
@@ -60,14 +125,27 @@ int enfileirar(Fila f, int valor){
     return 0;
 }
 ```
-- `if(f->qtd < MAX)`: verifica se ainda há espaço — usa `qtd` (não compara `inicio` com `final` diretamente), evitando a ambiguidade mencionada acima.
-- `f->dados[f->final] = valor`: coloca o novo valor na posição indicada por `final`.
-- `f->final = (f->final + 1) % MAX`: **parte "circular"**. Em vez de só `final++`, usa `%` (resto da divisão) para "voltar ao início" do array quando `final` chega em `MAX`.
-  - Exemplo com `MAX = 4`: se `final = 3` e soma 1, dá 4. Mas `4 % 4 = 0`. Em vez de `final` virar 4 (posição inválida), ele "dá a volta" e vira 0 de novo.
-- `f->qtd++`: incrementa a contagem de elementos.
-- Retorna `1` (sucesso) ou `0` (fila cheia).
 
-### `desenfileirar(Fila f)` — remove do início
+**O que faz:** insere `valor` no **final** da fila.
+
+**Retorno:** `1` se conseguiu inserir, `0` se a fila estava cheia.
+
+**Lógica passo a passo:**
+1. `if(f->qtd < MAX)`: só insere se ainda houver espaço. Se `qtd == MAX`, a fila está cheia e a função retorna `0` sem alterar nada.
+2. `f->dados[f->final] = valor`: grava o valor na próxima posição livre.
+3. `f->final = (f->final + 1) % MAX`: avança o `final` para a posição seguinte, **de forma circular**. O `% MAX` é o que faz o índice voltar a `0` quando passa do fim do array:
+   - `final = 0` → `(0+1) % 4 = 1`
+   - `final = 2` → `(2+1) % 4 = 3`
+   - `final = 3` → `(3+1) % 4 = 0` ← volta ao começo
+4. `f->qtd++`: atualiza a contagem.
+5. `return 1`.
+
+**Complexidade:** O(1).
+
+---
+
+### `desenfileirar()`
+
 ```c
 int desenfileirar(Fila f){
     if(f->qtd > 0){
@@ -75,37 +153,47 @@ int desenfileirar(Fila f){
         f->qtd--;
         return 1;
     }
-    return 0;       
+    return 0;
 }
 ```
-- Verifica se a fila não está vazia (`qtd > 0`).
-- `f->inicio = (f->inicio + 1) % MAX`: avança o índice de início, também de forma circular.
-- O valor **não é apagado fisicamente** de `dados[]`. Só o índice `inicio` "anda para frente", fazendo aquele valor sair do alcance lógico da fila.
-- `f->qtd--`: decrementa a contagem.
-- Retorna `1` (sucesso) ou `0` (fila vazia, nada a remover).
 
-### `acessar_inicio(Fila f)` — peek (consulta sem remover)
+**O que faz:** remove o elemento do **início** da fila (o mais antigo).
+
+**Retorno:** `1` se removeu, `0` se a fila estava vazia. **Não devolve o valor removido**; para ler o valor, use `acessar_inicio` **antes** de desenfileirar.
+
+**Lógica passo a passo:**
+1. `if(f->qtd > 0)`: só remove se houver algum elemento.
+2. `f->inicio = (f->inicio + 1) % MAX`: o início avança uma posição (circularmente). O elemento que estava ali passa a ser considerado "fora da fila".
+3. `f->qtd--`: atualiza a contagem.
+4. `return 1`.
+
+**Detalhe importante:** a remoção é **lógica**, e o dado **não é apagado** do array. Ele continua fisicamente em `dados[...]` até ser sobrescrito por um futuro `enfileirar`. Isso é perfeitamente correto, pois só `inicio` e `qtd` definem o que "faz parte" da fila. É também mais rápido, já que nada precisa ser deslocado.
+
+**Complexidade:** O(1).
+
+---
+
+### `acessar_inicio()`
+
 ```c
 int acessar_inicio(Fila f){
     if(f->qtd > 0){
         return f->dados[f->inicio];
     }
-    return -1;
+    return 0;
 }
 ```
-- Lógica **correta** (diferente do `acessar_topo` da pilha, que tinha bug por falta de chaves): chaves bem colocadas, `if` cobrindo o `return` certo.
-- Se a fila tem elementos, retorna o valor na posição `inicio` (o próximo a sair).
-- Se está vazia, retorna `-1` como indicador de fila vazia.
 
-### `destruir(Fila f)`
-```c
-void destruir(Fila f){
-    if(f != NULL) free(f);                      
-}
-```
-- Libera a memória alocada por `criar()`.
+**O que faz:** devolve o valor do primeiro elemento **sem removê-lo** (só consulta).
 
-### `imprimir_fila(Fila f)`
+**Lógica:**
+- Se a fila tem elementos, retorna `f->dados[f->inicio]`.
+- Se está vazia, retorna `0` (indicador de erro).
+
+---
+
+### `imprimir_fila()`
+
 ```c
 void imprimir_fila(Fila f){
     for(int i = 0; i < MAX; i++){
@@ -114,77 +202,97 @@ void imprimir_fila(Fila f){
     printf("\n");
 }
 ```
-- Percorre **todo o array `dados`** (do índice 0 até `MAX-1`), independente de `inicio`, `final` ou `qtd`.
-- **Atenção**: imprime **todas as posições do array**, incluindo posições que podem conter "lixo lógico" (valores antigos já desenfileirados, mas ainda fisicamente presentes). Não é uma "view" fiel da fila em ordem lógica (do `inicio` até o `final`) — imprime o array cru.
-- Não é chamada no `main` fornecido — está definida, mas não usada nesse trecho.
 
----
+**O que faz:** imprime o conteúdo do array `dados`, posição por posição, de `0` até `MAX - 1`.
 
-## Análise do `main()`
+**Lógica:** um `for` percorre todos os `MAX` índices e imprime cada valor entre colchetes, seguido de uma quebra de linha.
 
-```c
-Fila f = criar();
+> ⚠️ **Esta função mostra o array físico, não a fila lógica.** Isso gera dois efeitos:
+> 1. **Posições vazias aparecem com lixo.** Como o `malloc` não zera a memória, posições nunca escritas mostram valores aleatórios.
+> 2. **Elementos já removidos continuam aparecendo**, pois `desenfileirar` não apaga o dado. E a ordem impressa é a das posições do array, não a ordem de saída da fila.
+>
+> **Exemplo:** depois de enfileirar 20, 40, 60, 30, desenfileirar e enfileirar 50, o array fica `[50][40][60][30]`, mas a fila (do início ao fim) é `40 → 60 → 30 → 50`.
 
-enfileirar(f, 20);
-enfileirar(f, 40);
-enfileirar(f, 60);
-enfileirar(f, 30);
-```
-- Enfileira 4 valores. Como `MAX = 4`, a fila fica completamente cheia.
+**Versão que imprime só a fila lógica** (do início ao fim, `qtd` elementos):
 
 ```c
-printf("\nInicio da fila: %d", acessar_inicio(f));
-```
-- Imprime o início da fila, o primeiro elemento inserido (FIFO): `20`.
-
-```c
-desenfileirar(f);
-printf("\nInicio da fila: %d\n", acessar_inicio(f));
-```
-- Remove o `20` (o primeiro que entrou).
-- Novo início é o `40` (segundo elemento inserido) — imprime `40`.
-
-```c
-if(enfileirar(f, 50)){
-    printf("Enfileirou\n");
-} else {
-    printf("Nao enfileirou\n");
+void imprimir_fila(Fila f){
+    for(int i = 0; i < f->qtd; i++){
+        int pos = (f->inicio + i) % MAX;
+        printf("[%d]", f->dados[pos]);
+    }
+    printf("\n");
 }
 ```
-- Como acabamos de desenfileirar, a fila tem espaço de novo (`qtd = 3 < MAX = 4`).
-- `enfileirar(f, 50)` retorna `1` (sucesso) → imprime **"Enfileirou"**.
-- A lógica circular entra em ação: antes desse `enfileirar`, `final` estava em `0` (avançou `0→1→2→3→0` após inserir 20, 40, 60, 30). O `50` é escrito em `dados[0]`, **sobrescrevendo** a posição onde estava o `20` antigo (já removido logicamente).
+
+A posição real de cada elemento é `(inicio + i) % MAX`, e o `% MAX` cuida do caso em que a fila "dá a volta" no array.
+
+**Complexidade:** O(MAX) na versão original, O(qtd) na versão sugerida.
 
 ---
 
-## Simulando passo a passo (com `MAX = 4`)
+### `destruir()`
 
-| Ação | `dados[]` (índices 0,1,2,3) | `inicio` | `final` | `qtd` |
-|---|---|---|---|---|
-| `criar()` | `[_,_,_,_]` | 0 | 0 | 0 |
-| `enfileirar(20)` | `[20,_,_,_]` | 0 | 1 | 1 |
-| `enfileirar(40)` | `[20,40,_,_]` | 0 | 2 | 2 |
-| `enfileirar(60)` | `[20,40,60,_]` | 0 | 3 | 3 |
-| `enfileirar(30)` | `[20,40,60,30]` | 0 | 0 (deu a volta: `(3+1)%4=0`) | 4 (cheia) |
-| `acessar_inicio()` | — | 0 | — | — | retorna `dados[0] = 20` |
-| `desenfileirar()` | (lógico: `40,60,30`) | 1 | 0 | 3 |
-| `acessar_inicio()` | — | 1 | — | — | retorna `dados[1] = 40` |
-| `enfileirar(50)` | `[50,40,60,30]` (50 sobrescreve posição 0) | 1 | 1 (`(0+1)%4=1`) | 4 (cheia de novo) |
-
-**Saída esperada do programa:**
+```c
+void destruir(Fila f){
+    if(f != NULL){
+        free(f);
+    }
+}
 ```
 
-Inicio da fila: 20
-Inicio da fila: 40
-Enfileirou
-```
+**O que faz:** libera a memória da fila.
+
+**Lógica:**
+- Como o array `dados` está **dentro** da struct, um único `malloc` foi feito em `criar`, então **um único `free`** libera tudo. (Numa lista encadeada seria preciso liberar cada nó.)
+- O teste `f != NULL` protege contra destruir uma fila que não foi criada. Na prática, `free(NULL)` já é seguro em C (não faz nada), então o `if` é opcional, mas deixa a intenção explícita.
+
+> **Depois de chamar `destruir`:** o ponteiro `f` do chamador continua guardando o endereço antigo (agora inválido). Não use a fila depois disso.
+
+**Complexidade:** O(1).
 
 ---
 
-## Variáveis do `main`
+## Exemplo: acompanhando o comportamento circular
 
-| Variável | Tipo | Para que serve |
+Sequência de operações com `MAX = 4`, mostrando o estado interno (`?` = posição nunca escrita, com lixo):
+
+| Operação | `dados[0..3]` | `inicio` | `final` | `qtd` | Retorno |
+|---|---|---|---|---|---|
+| `criar()` | `? ? ? ?` | 0 | 0 | 0 | |
+| `enfileirar(20)` | `20 ? ? ?` | 0 | 1 | 1 | 1 |
+| `enfileirar(40)` | `20 40 ? ?` | 0 | 2 | 2 | 1 |
+| `enfileirar(60)` | `20 40 60 ?` | 0 | 3 | 3 | 1 |
+| `enfileirar(30)` | `20 40 60 30` | 0 | **0** | 4 | 1 |
+| `enfileirar(99)` | `20 40 60 30` | 0 | 0 | 4 | **0** (cheia) |
+| `desenfileirar()` | `20 40 60 30` | 1 | 0 | 3 | 1 |
+| `enfileirar(50)` | `50 40 60 30` | 1 | 1 | 4 | 1 |
+
+Observe:
+- No 4º `enfileirar`, o `final` **dá a volta** para `0` graças ao `% MAX`.
+- Com a fila cheia, `inicio == final` (ambos `0`); quem diz que está cheia (e não vazia) é o `qtd == 4`.
+- Depois do `desenfileirar`, o `20` continua em `dados[0]`, mas está fora da fila. O `enfileirar(50)` **reaproveita** essa posição, sobrescrevendo o `20`. É a vantagem da fila circular: o espaço liberado no início volta a ser usado.
+- A fila lógica no final é `40 → 60 → 30 → 50`, mesmo o array físico sendo `[50][40][60][30]`.
+
+---
+
+## Resumo das complexidades
+
+| Função | Complexidade | Retorno |
 |---|---|---|
-| `f` | `Fila` (ponteiro) | Representa a fila alocada dinamicamente |
+| `criar` | O(1) | ponteiro para a fila, ou `NULL` se falhar |
+| `enfileirar` | O(1) | `1` = inseriu, `0` = fila cheia |
+| `desenfileirar` | O(1) | `1` = removeu, `0` = fila vazia |
+| `acessar_inicio` | O(1) | valor do início, ou `-1` se vazia |
+| `imprimir_fila` | O(MAX) | nada |
+| `destruir` | O(1) | nada |
 
----
+## Fila circular (array) × Lista encadeada
+
+| | Fila com array circular | Fila com lista encadeada |
+|---|---|---|
+| Capacidade | fixa (`MAX`) | dinâmica |
+| Memória | um bloco só | um `malloc` por nó |
+| Enfileirar / desenfileirar | O(1) | O(1) (com ponteiro para o fim) |
+| Pode ficar cheia? | sim | só se faltar memória |
+| `destruir` | um `free` | laço liberando nó a nó |
