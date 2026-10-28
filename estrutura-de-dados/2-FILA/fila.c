@@ -1,5 +1,6 @@
 #include<stdlib.h>
 #include<stdio.h>
+#include "fila.h"
 #define MAX 4
 
 struct fila{
@@ -8,14 +9,13 @@ struct fila{
     int final;
     int qtd;
 };
-typedef struct fila* Fila;
 
 Fila criar(){
     Fila f = malloc(sizeof(struct fila));
     if(f != NULL){
         f->inicio = 0;
         f->final = 0;
-        f->qtd = 0; // inicializa a QUANTIDADE de elementos na fila como 0
+        f->qtd = 0;
     }
     return f;
 }
