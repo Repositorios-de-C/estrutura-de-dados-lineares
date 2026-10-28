@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include "lista.h"
-
 struct elem {
     int valor;
     struct elem* prox;
